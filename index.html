@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy LAO — Trademark Lookup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1714; --ink-2: #4a4540; --ink-3: #8a8480;
+      --paper: #f7f4ef; --paper-3: #ddd5c8;
+      --gold: #c8943a; --gold-light: #f0d49a; --red: #c03a2b; --green: #2d6a4f;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+    header { border-bottom: 1px solid rgba(26,23,20,0.12); padding: 1.25rem 2rem; display: flex; align-items: baseline; gap: 1rem; }
+    .logo-text { font-family: 'Instrument Serif', serif; font-size: 1.5rem; }
+    .logo-text em { font-style: italic; color: var(--gold); }
+    .logo-sub { font-size: 0.7rem; color: var(--ink-3); letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+    main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    .search-label { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 0.6rem; display: block; }
+    .search-row { display: flex; border: 1.5px solid var(--ink); border-radius: 4px; overflow: hidden; transition: box-shadow 0.2s; }
+    .search-row:focus-within { box-shadow: 4px 4px 0 var(--ink); }
+    .prefix { background: var(--ink); color: var(--paper); font-family: 'DM Mono', monospace; font-size: 0.9rem; padding: 0.7rem 1rem; display: flex; align-items: center; user-select: none; letter-spacing: 0.06em; }
+    .search-input { flex: 1; border: none; outline: none; background: white; font-family: 'DM Mono', monospace; font-size: 1rem; padding: 0.7rem 1rem; color: var(--ink); }
+    .search-input::placeholder { color: var(--ink-3); }
+    .search-btn { background: var(--gold); border: none; cursor: pointer; padding: 0.7rem 1.4rem; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; color: white; transition: background 0.15s; white-space: nowrap; }
+    .search-btn:hover { background: #b07d28; }
+    .search-btn:disabled { background: var(--paper-3); color: var(--ink-3); cursor: not-allowed; }
+    .status-row { margin-top: 1rem; font-size: 0.82rem; color: var(--ink-3); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 0.6rem; min-height: 1.4rem; }
+    .dots { display: inline-flex; gap: 3px; }
+    .dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); animation: bop 1s infinite; }
+    .dots span:nth-child(2) { animation-delay: 0.15s; }
+    .dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bop { 0%,80%,100% { transform: translateY(0); opacity: 0.35; } 40% { transform: translateY(-5px); opacity: 1; } }
+    .error-box { border: 1.5px solid var(--red); border-radius: 4px; padding: 1rem 1.25rem; background: #fdf5f4; color: var(--red); font-size: 0.875rem; line-height: 1.7; margin-top: 1.5rem; }
+    .error-box a { color: var(--red); font-weight: 500; }
+    .card { margin-top: 1.5rem; border: 1.5px solid var(--ink); border-radius: 4px; background: white; box-shadow: 5px 5px 0 var(--paper-3); overflow: hidden; animation: fadeUp 0.25s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .card-head { background: var(--ink); color: var(--paper); padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .card-reg { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--gold-light); letter-spacing: 0.1em; margin-bottom: 3px; }
+    .card-name { font-family: 'Instrument Serif', serif; font-size: 1.35rem; line-height: 1.2; }
+    .card-name-en { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: var(--gold-light); font-style: italic; opacity: 0.85; }
+    .copy-tm-btn { background: transparent; border: 1px solid rgba(255,255,255,0.25); color: var(--gold-light); font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.15rem 0.5rem; border-radius: 3px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .copy-tm-btn:hover { background: rgba(255,255,255,0.1); }
+    .copy-tm-btn.copied { background: rgba(45,106,79,0.5); border-color: #a8e6c8; color: #a8e6c8; }
+    .pill { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.07em; text-transform: uppercase; padding: 0.3rem 0.7rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; flex-shrink: 0; }
+    .pill.registered { background: rgba(45,106,79,0.45); color: #a8e6c8; }
+    .pill.pending { background: rgba(200,148,58,0.35); color: var(--gold-light); }
+    .pill.other { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.65); }
+    .card-body { padding: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem; }
+    .field { display: flex; flex-direction: column; gap: 3px; }
+    .field.full { grid-column: 1 / -1; }
+    .fl { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+    .fv { font-size: 0.88rem; color: var(--ink); line-height: 1.55; }
+    .card-foot { border-top: 1px solid rgba(26,23,20,0.1); padding: 0.85rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    /* Logo thumbnail — clickable */
+    .logo-thumb { max-height: 64px; max-width: 120px; object-fit: contain; border-radius: 2px; cursor: zoom-in; transition: opacity 0.15s; }
+    .logo-thumb:hover { opacity: 0.8; }
+    .ext-link { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--gold); text-decoration: none; display: flex; align-items: center; gap: 0.35rem; letter-spacing: 0.04em; }
+    .ext-link:hover { color: var(--ink); }
+    /* Lightbox */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 6px; box-shadow: 0 8px 48px rgba(0,0,0,0.5); background: white; padding: 1rem; }
+    /* Formatted output panel */
+    .fmt-card { margin-top: 1rem; border: 1.5px solid var(--ink); border-radius: 4px; background: white; box-shadow: 5px 5px 0 var(--paper-3); overflow: hidden; animation: fadeUp 0.25s ease; }
+    .fmt-head { background: #2a2420; color: var(--paper); padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .fmt-title { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); }
+    .fmt-body { padding: 1.25rem 1.25rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.88rem; line-height: 1.9; color: var(--ink); }
+    .fmt-line { display: flex; gap: 0.75rem; align-items: baseline; }
+    .fmt-code { color: var(--ink-3); font-size: 0.75rem; flex-shrink: 0; width: 2.5rem; }
+    .fmt-val { color: var(--ink); word-break: break-word; }
+    .fmt-loading { padding: 1.25rem; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--ink-3); display: flex; align-items: center; gap: 0.6rem; }
+    .copy-btn { background: var(--gold); border: none; cursor: pointer; padding: 0.4rem 0.9rem; font-family: 'DM Mono', monospace; font-size: 0.7rem; color: white; border-radius: 3px; letter-spacing: 0.04em; transition: background 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 0.4rem; }
+    .copy-btn:hover { background: #b07d28; }
+    .copy-btn.copied { background: var(--green); }
+    @media (max-width: 500px) { header { padding: 1rem; } main { padding: 1.5rem 1rem; } .card-body { grid-template-columns: 1fr; } .field.full { grid-column: 1; } }
+  </style>
+</head>
+<body>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Trademark logo enlarged">
+</div>
+
+<header>
+  <div class="logo-text">Easy <em>LAO</em></div>
+  <div class="logo-sub">Trademark Registry</div>
+</header>
+
+<main>
+  <label class="search-label" for="tmInput">Trademark number</label>
+  <div class="search-row">
+    <div class="prefix">LA</div>
+    <input id="tmInput" class="search-input" type="text" inputmode="numeric"
+      placeholder="54076 or 054076" maxlength="7"
+      onkeydown="if(event.key==='Enter') go()">
+    <button class="search-btn" id="btn" onclick="go()">Search →</button>
+  </div>
+  <div class="status-row" id="status"></div>
+  <div id="out"></div>
+</main>
+
+<script>
+  // ── Utilities ──────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function setStatus(msg) {
+    document.getElementById('status').innerHTML = `<span class="dots"><span></span><span></span><span></span></span> ${msg}`;
+  }
+  function clearStatus() { document.getElementById('status').innerHTML = ''; }
+  function field(label, val, cls) {
+    if (!val || val === 'null') return '';
+    return `<div class="field ${cls||''}"><span class="fl">${esc(label)}</span><span class="fv">${esc(val)}</span></div>`;
+  }
+
+  // Strip diacritics and non-alphanumeric chars, uppercase
+  function sanitize(str) {
+    return (str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+
+  // Translate via our Netlify proxy (avoids CORS on Google endpoint)
+  async function googleTranslate(text) {
+    if (!text || !text.trim()) return text;
+    try {
+      const res = await fetch(`/.netlify/functions/translate?text=${encodeURIComponent(text)}`);
+      const json = await res.json();
+      return json.translated || text;
+    } catch (e) {
+      return text;
+    }
+  }
+
+  // ── Lightbox ───────────────────────────────────────────────────────────
+  function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+  // ── Main search ────────────────────────────────────────────────────────
+  async function go() {
+    const inputVal = document.getElementById('tmInput').value.trim().replace(/\D/g, '');
+    if (!inputVal) return;
+    // Strip leading zero (user may enter 054076, PTO uses 54076)
+    const raw = inputVal.replace(/^0+/, '') || inputVal;
+    const btn = document.getElementById('btn');
+    const out = document.getElementById('out');
+    btn.disabled = true;
+    out.innerHTML = '';
+    setStatus('Fetching trademark data…');
+
+    let data;
+    try {
+      const res = await fetch(`/.netlify/functions/trademark?id=${raw}`);
+      const text = await res.text();
+      try { data = JSON.parse(text); }
+      catch(_) { throw new Error('Server error: ' + text.substring(0, 150)); }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    } catch(err) {
+      clearStatus();
+      out.innerHTML = `<div class="error-box"><strong>Error:</strong> ${esc(err.message)}<br><br>
+        <a href="https://online.dip.gov.la/wopublish-search/public/detail/trademarks?id=LA${esc(raw)}" target="_blank" rel="noopener">Open directly on the Lao IP Office ↗</a></div>`;
+      btn.disabled = false;
+      return;
+    }
+
+    clearStatus();
+
+    if (data.notFound) {
+      out.innerHTML = `<div class="error-box">No trademark found for <strong>LA${esc(raw)}</strong>.<br><br>
+        <a href="${esc(data.url)}" target="_blank" rel="noopener">Check on the Lao IP Office ↗</a></div>`;
+      btn.disabled = false;
+      return;
+    }
+    if (data.blocked) {
+      out.innerHTML = `<div class="error-box">The Lao IP Office is currently blocking automated access.<br><br>
+        <a href="${esc(data.url)}" target="_blank" rel="noopener">Open LA${esc(raw)} directly ↗</a></div>`;
+      btn.disabled = false;
+      return;
+    }
+
+    const f = data.fields || {};
+    if (!f.trademarkName && !f.ownerName) {
+      out.innerHTML = `<div class="error-box">Page fetched but data could not be extracted for <strong>LA${esc(raw)}</strong>.<br><br>
+        <a href="${esc(data.url)}" target="_blank" rel="noopener">View on the Lao IP Office ↗</a></div>`;
+      btn.disabled = false;
+      return;
+    }
+
+    const statusText = (f.status || '').toLowerCase();
+    const pillClass = statusText.includes('regist') ? 'registered'
+                    : (statusText.includes('pend') || statusText.includes('appli')) ? 'pending' : 'other';
+    const regNum = f.registrationNumber || data.trademarkNumber || 'LA' + raw;
+    const logoUrl = data.logoUrl || '';
+
+    // ── Main result card ─────────────────────────────────────────────────
+    out.innerHTML = `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-reg">${esc(regNum)}</div>
+            <div class="card-name">${esc(f.trademarkName || '—')}</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-top:4px;">
+              <div class="card-name-en" id="cardNameEn"></div>
+              <button class="copy-tm-btn" id="copyTmBtn" onclick="copyTmName()" style="display:none;">Copy</button>
+            </div>
+          </div>
+          ${f.status ? `<span class="pill ${pillClass}">${esc(f.status)}</span>` : ''}
+        </div>
+        <div class="card-body">
+          ${field('Owner / Applicant', f.ownerName)}
+          ${field('Address', f.ownerAddress)}
+          ${field('Filing date', f.filingDate)}
+          ${field('Registration date', f.registrationDate)}
+          ${field('Expiry date', f.expiryDate)}
+          ${field('Nice classes', f.classes)}
+          ${field('Goods & services', f.goods, 'full')}
+        </div>
+        <div class="card-foot">
+          ${logoUrl
+            ? `<img class="logo-thumb" src="${esc(logoUrl)}" alt="Trademark logo"
+                 onclick="openLightbox('${esc(logoUrl)}')"
+                 onerror="this.style.display='none'"
+                 title="Click to enlarge">`
+            : '<span></span>'}
+          <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
+            <a class="ext-link" href="${esc(data.url)}" target="_blank" rel="noopener">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+              </svg>
+              View on Lao IP Office
+            </a>
+            <a class="ext-link" href="https://translate.google.com/?sl=auto&tl=en&text=${encodeURIComponent((f.trademarkName||'') + '\n' + (f.ownerName||''))}&op=translate" target="_blank" rel="noopener">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+              </svg>
+              Open in Google Translate
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formatted panel: loading state -->
+      <div class="fmt-card" id="fmtCard">
+        <div class="fmt-head" id="fmtHead">
+          <span class="fmt-title">Formatted Output</span>
+        </div>
+        <div class="fmt-loading" id="fmtLoading">
+          <span class="dots"><span></span><span></span><span></span></span>
+          Translating…
+        </div>
+      </div>`;
+
+    btn.disabled = false;
+
+    // ── Translate both owner name and trademark name in parallel ────────
+    const [ownerTranslated, tmTranslated] = await Promise.all([
+      googleTranslate(f.ownerName || f.trademarkName || ''),
+      googleTranslate(f.trademarkName || ''),
+    ]);
+    const ownerClean = sanitize(ownerTranslated);
+
+    const copyText = `0009 : ${ownerClean}`;
+    window._copyText = copyText;
+
+    // Replace loading state with results
+    document.getElementById('fmtLoading').remove();
+    document.getElementById('fmtHead').innerHTML = `
+      <span class="fmt-title">Formatted Output</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyFmt()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+        Copy
+      </button>`;
+
+    const ownerDisplay = ownerClean || '(translation failed — check owner name above)';
+    const tmDisplay = tmTranslated && tmTranslated !== (f.trademarkName || '') ? tmTranslated : null;
+
+    // Show translation + copy button in card header
+    const cardNameEn = document.getElementById('cardNameEn');
+    const copyTmBtn = document.getElementById('copyTmBtn');
+    if (cardNameEn && tmDisplay) {
+      cardNameEn.textContent = tmDisplay;
+      window._tmTranslated = tmDisplay;
+      if (copyTmBtn) copyTmBtn.style.display = 'inline-block';
+    }
+
+    document.getElementById('fmtCard').insertAdjacentHTML('beforeend', `
+      <div class="fmt-body">
+        <div class="fmt-line">
+          <span class="fmt-code">0009</span>
+          <span class="fmt-val">${esc(ownerDisplay)}</span>
+        </div>
+
+      </div>`);
+  }
+
+  // ── Copy trademark name translation ──────────────────────────────────
+  function copyTmName() {
+    navigator.clipboard.writeText(window._tmTranslated || '').then(() => {
+      const btn = document.getElementById('copyTmBtn');
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // ── Copy to clipboard ──────────────────────────────────────────────────
+  function copyFmt() {
+    navigator.clipboard.writeText(window._copyText || '').then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>

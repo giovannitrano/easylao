@@ -1,0 +1,14 @@
+[build]
+  publish = "."
+  command = "echo ok"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions."trademark"]
+  timeout = 20
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
