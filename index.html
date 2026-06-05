@@ -134,7 +134,7 @@
   async function googleTranslate(text) {
     if (!text || !text.trim()) return text;
     try {
-      const res = await fetch(`/.netlify/functions/translate?text=${encodeURIComponent(text)}`);
+      const res = await fetch(`/api/translate?text=${encodeURIComponent(text)}`);
       const json = await res.json();
       return json.translated || text;
     } catch (e) {
@@ -166,7 +166,7 @@
 
     let data;
     try {
-      const res = await fetch(`/.netlify/functions/trademark?id=${raw}`);
+      const res = await fetch(`/api/trademark?id=${raw}`);
       const text = await res.text();
       try { data = JSON.parse(text); }
       catch(_) { throw new Error('Server error: ' + text.substring(0, 150)); }
